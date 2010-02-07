@@ -1,0 +1,10 @@
+== Demeter ==
+
+Basic POS/Starbase tracker for EVE Online, uses the API library from Ceres 0.2.
+
+To use
+* Clone it
+* Install Sinatra/Amalgalite/Ceres-Support/Ceres-API
+* Place the 'dom111-sqlite3-v1.db' database from http://eve.no-ip.de/dom111/dom111-sqlite3-v1.db.bz2 (Thank you Zofu for generating the SQLite version of the CCP datadump)
+* Fix config/demeter.example and rename it to config/demeter
+* Run demeter.rb, beware that no error checking is done

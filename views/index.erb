@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html>
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <title>Demeter - <%= Demeter.title %></title>
+  </head>
+  
+  <body>
+    <h1>Demeter - <%= Demeter.title %></h1>
+    
+    <% for starbase in @starbases %>
+      <p>
+        <h3><%= Demeter.datadump.execute("SELECT itemName FROM mapDenormalize WHERE itemID = ?", [starbase[:moon_id]])[0][0] %> (<%= Demeter.datadump.execute("SELECT typeName FROM invTypes WHERE typeID = ?", [starbase[:type_id]])[0][0] %>)</h3>
+        <ul>
+          <li><strong>Onlined at:</strong> <%= starbase[:onlined_at] %></li>
+          <li><strong>Current state:</strong> <%= starbase[:state].to_s.capitalize %> (Changed at <%= starbase[:state / :changed_at] %>)</li>
+          <% if starbase[:settings / :general / :allows] %>
+          <li><strong>Allows:</strong> <%= starbase[:settings / :general / :allows].map { |x| x.to_s.capitalize }.join(', ') %></li>
+          <% end %>
+          <li><strong>Cached until:</strong> <%= Demeter.cached_until(starbase[:id])%></li>
+        </ul>
+        
+        <% if starbase[:fuel] %>
+        <table>
+          <tr>
+            <th>Fuel type</th>
+            <th>Quantity Remaining</th>
+            <th>Time Remaining (under 100% load)</th>
+          </tr>
+          
+          <% starbase[:fuel].map do |fuel_id, fuel_quantity| %>
+          <tr>
+            <td><%= Demeter.datadump.execute("SELECT typeName FROM invTypes WHERE typeID = ?", [fuel_id])[0][0] %></td>
+            <td><%= fuel_quantity.to_s.gsub(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1,") %></td>            
+            <td><%= (fuel_quantity / Demeter.datadump.execute("SELECT quantity FROM invControlTowerResources WHERE controlTowerTypeID = ? AND resourceTypeID = ?", [starbase[:type_id], fuel_id])[0][0]).divmod(24).join(" days ") %> hours</td>
+          </tr>
+          <% end %>
+        </table>
+        <% end %>
+        
+        <% if Demeter.cached_until(starbase[:id]) < Time.now %>
+        <a href="update/<%= starbase[:id] %>">Update starbase</a>
+        <% end %>
+      </p>
+    <% end %>
+    
+    <p>
+      <strong>Starbase list cached until:</strong> <%= Demeter.cached_until(:list) %><br />
+      <% if Demeter.cached_until(:list) < Time.now %>
+      <a href="update">Update list</a>
+      <% end %>
+    </p>
+    
+  </body>
+</html>
