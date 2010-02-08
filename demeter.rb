@@ -7,6 +7,8 @@ require 'amalgalite'
 require 'sinatra'
 require 'ceres/api'
 
+enable :sessions
+
 class Demeter
   @datadump = Amalgalite::Database.new(File.dirname(__FILE__) + "/db/dom111-sqlite3-v1.db")
   @cached_until = Hash.new { Time.at(0) }
@@ -66,22 +68,48 @@ class Demeter
   end
 end
 
-use Rack::Auth::Basic do |username, password|
-  [username, password] == [Demeter.username, Demeter.password]
+def authorize(username, password)
+  if [username, password] == [Demeter.username, Demeter.password]
+    session[:user] = username
+    puts "Test: #{Demeter.username} == #{username} & #{Demeter.password} == #{password} & #{session[:user]}"
+  end
+end
+
+def authorized?
+  session[:user]
 end
 
 
 get '/' do
+  redirect '/login' unless authorized?
+  
   @starbases = Demeter.active_starbases.map { |x| Demeter.starbase(x) }
   
   erb :index
 end
 
-get '/list' do
-  Demeter.active_starbases.inspect + "<br /><br />" + Demeter.active_starbases.map { |x| Demeter.starbase(x) }.inspect
+get '/login' do
+  erb :login
+end
+
+get '/logout' do
+  session[:user] = nil
+  redirect '/login'
+end
+
+post '/login' do
+  authorize(params[:username], params[:password])
+  
+  if authorized?
+    redirect '/'
+  else
+    redirect '/login'
+  end
 end
 
 get '/update' do
+  redirect '/login' unless authorized?
+  
   if Demeter.cached_until(:list) < Time.now
     active_starbases, cached_until = Demeter.api.starbases
     active_starbases.each { |x| Demeter.merge_starbase(x[:id], x) }    
@@ -97,6 +125,8 @@ get '/update' do
 end
 
 get '/update/:id' do
+  redirect '/login' unless authorized?
+  
   id = params[:id].to_i
   
   if Demeter.active_starbases.include?(id) && Demeter.cached_until(id) < Time.now
