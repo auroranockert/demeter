@@ -36,7 +36,11 @@
             <td><%= Demeter.datadump.execute("SELECT typeName FROM invTypes WHERE typeID = ?", [fuel_id])[0][0] %></td>
             <td><%= fuel_quantity.to_s.gsub(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1,") %></td
             <td><%= (fuel_quantity / Demeter.datadump.execute("SELECT quantity FROM invControlTowerResources WHERE controlTowerTypeID = ? AND resourceTypeID = ?", [starbase[:type_id], fuel_id])[0][0]).divmod(24).join(" days ") %> hours</td>
+            <% unless fuel_id == 16275 %>
             <td><%= (Demeter.datadump.execute("SELECT quantity FROM invControlTowerResources WHERE controlTowerTypeID = ? AND resourceTypeID = ?", [starbase[:type_id], fuel_id])[0][0] * 240 - fuel_quantity).to_s.gsub(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1,") %> units</td>
+            <% else %>
+            <td>N/A</td>
+            <% end %>
           </tr>
           <% end %>
         </table>
